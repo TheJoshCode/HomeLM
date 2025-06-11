@@ -1,0 +1,37 @@
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <button class="sidebar-toggle btn btn-link" id="sidebar-toggle">
+            <span class="open-icon">☰</span>
+            <span class="close-icon" style="display: none;">➜</span>
+        </button>
+        <h2 class="sidebar-title">HomeLM</h2>
+    </div>
+
+    <ul class="thread-list list-group">
+        {% for thread in threads %}
+            <li class="list-group-item {% if thread.thread_name == thread_name %}active{% endif %}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{{ url_for('chat', thread_name=thread.thread_name) }}" class="text-decoration-none text-white d-block flex-grow-1">
+                        {{ thread.thread_name }}
+                        <small class="text-muted d-block">
+                            {{ thread.last_timestamp[:19].replace('T', ' ') if thread.last_timestamp else '' }}
+                        </small>
+                    </a>
+                    <form method="POST" action="{{ url_for('delete_thread', thread_name=thread.thread_name) }}" style="display:inline;">
+                        <button type="submit" class="delete-btn" title="Delete thread">🗑️</button>
+                    </form>
+                </div>
+            </li>
+        {% else %}
+            <li class="list-group-item text-muted">No chats yet.</li>
+        {% endfor %}
+    </ul>
+
+    <div class="sidebar-footer">
+        <a href="{{ url_for('new_thread') }}" class="btn btn-primary w-100 mb-3">New Chat</a>
+
+        <div class="logout-container">
+            <a href="{{ url_for('logout') }}" class="btn btn-primary w-100">Logout</a>
+        </div>
+    </div>
+</div>

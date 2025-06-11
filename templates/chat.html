@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="app-layout">
+    {% include '_sidebar.html' %}
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2 class="chat-title">{{ thread_name }}</h2>
+        </div>
+        <div class="chat-content">
+            <div class="chat-history" id="chat-history">
+                {% for chat in chats %}
+                    <div class="message user-message">
+                        <div class="message-bubble">
+                            <p>{{ chat.user_message }}</p>
+                            <small class="timestamp">{{ chat.timestamp[:19].replace('T', ' ') }}</small>
+                        </div>
+                    </div>
+                    <div class="message llm-message">
+                        <div class="message-bubble">
+                            <p>{{ chat.llm_response }}</p>
+                            <small class="timestamp">{{ chat.timestamp[:19].replace('T', ' ') }}</small>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="input-area">
+                <form id="chat-form" method="POST">
+                    <div class="input-group input-match-chat">
+                        <input type="text" class="form-control" name="message" id="message-input" placeholder="Type your message..." required autocomplete="off" />
+                        <button type="submit" class="btn btn-primary">Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block styles %}
+<style>
+/* Custom spinner CSS */
+.spinner {
+    border: 4px solid #e0e0e0; /* Light gray border */
+    border-top: 4px solid #007bff; /* Primary color for spinning effect */
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto; /* Center the spinner */
+}
+
+/* Animation for the spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Ensure the spinner aligns with the llm-message styling */
+.message.llm-message .spinner {
+    display: block;
+    padding: 10px;
+}
+
+/* Input field styling to lock the initial gray background */
+#message-input {
+    background-color: #f8f9fa; /* Bootstrap default gray, adjust to match your theme */
+    border: 1px solid #ced4da; /* Default Bootstrap border */
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+#message-input:focus,
+#message-input:active,
+#message-input:hover {
+    background-color: #f8f9fa !important; /* Lock gray background on focus, active, hover */
+    border-color: #80bdff; /* Bootstrap focus border color */
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); /* Bootstrap focus shadow */
+    outline: none; /* Remove default outline */
+}
+
+/* Force gray background for autocomplete */
+#message-input:-webkit-autofill,
+#message-input:-webkit-autofill:hover,
+#message-input:-webkit-autofill:focus,
+#message-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #f8f9fa inset !important; /* Force gray background */
+    -webkit-text-fill-color: #212529 !important; /* Ensure text color matches */
+    background-color: #f8f9fa !important; /* Fallback for other browsers */
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('chat-form').addEventListener('submit', async function(event) {
+    event.preventDefault(); // Prevent default form submission
+
+    // Disable send button
+    const sendButton = document.querySelector('button[type="submit"]');
+    sendButton.disabled = true;
+
+    // Get the message input
+    const messageInput = document.getElementById('message-input');
+    const message = messageInput.value;
+
+    // Append user message immediately
+    const chatHistory = document.getElementById('chat-history');
+    const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const userMessage = document.createElement('div');
+    userMessage.className = 'message user-message';
+    userMessage.innerHTML = `
+        <div class="message-bubble">
+            <p>${message}</p>
+            <small class="timestamp">${timestamp}</small>
+        </div>
+    `;
+    chatHistory.appendChild(userMessage);
+
+    // Append custom spinner where the AI response will appear
+    const spinner = document.createElement('div');
+    spinner.id = 'loading-spinner';
+    spinner.className = 'message llm-message';
+    spinner.innerHTML = `
+        <div class="message-bubble">
+            <div class="spinner"></div>
+        </div>
+    `;
+    chatHistory.appendChild(spinner);
+
+    // Scroll to bottom
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    try {
+        // Send message via AJAX
+        const response = await fetch('{{ url_for("chat", thread_name=thread_name) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: message })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            // Remove spinner
+            spinner.remove();
+
+            // Append LLM response
+            const llmMessage = document.createElement('div');
+            llmMessage.className = 'message llm-message';
+            llmMessage.innerHTML = `
+                <div class="message-bubble">
+                    <p>${data.llm_response}</p>
+                    <small class="timestamp">${data.timestamp.slice(0, 19).replace('T', ' ')}</small>
+                </div>
+            `;
+            chatHistory.appendChild(llmMessage);
+
+            // Scroll to bottom
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // Clear input
+            messageInput.value = '';
+        } else {
+            // Remove spinner and show error
+            spinner.remove();
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        spinner.remove();
+        alert('An error occurred while sending the message.');
+    } finally {
+        // Re-enable send button
+        sendButton.disabled = false;
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

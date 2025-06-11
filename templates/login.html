@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100vh; /* Full viewport height */
+        display: flex;
+        justify-content: center;
+        align-items: center; /* Centers content vertically and horizontally */
+        overflow: auto; /* Allows scrolling if needed */
+    }
+    .form-container {
+        width: 300px; /* 3:4 ratio width */
+        height: 400px; /* 3:4 ratio height */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center; /* Centers form content vertically */
+        padding: 20px;
+        box-sizing: border-box;
+        border: 1px solid #dee2e6; /* Bootstrap's default border color */
+    }
+    .form-container h1 {
+        margin-bottom: 1.5rem;
+        font-size: 1.8rem;
+        text-align: center;
+    }
+    .form-container form {
+        width: 100%;
+    }
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
+    .form-control {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .btn-primary {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    .btn-link {
+        display: block;
+        text-align: center;
+    }
+</style>
+
+<div class="form-container">
+    <h1>HomeLM</h1>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" required autocomplete="username" />
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+        <a href="{{ url_for('signup') }}" class="btn btn-link">Sign Up</a>
+    </form>
+</div>
+{% endblock %}
