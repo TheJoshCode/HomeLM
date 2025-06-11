@@ -1,7 +1,7 @@
 ![GIF Description](https://i.imgur.com/UzaWLlj.gif)
 
-# HomeLM
-A sleek, locally-hosted AI chat interface with LAN discovery, private user profiles, and secure, on-device chat history.
+# A Locally Hosted, Free Chatbot
+# Per-User Login & Chat Threads/History
 
 # PRE-REQUIREMENTS
 - python 3.9 or later
