@@ -207,13 +207,26 @@ def chat(thread_name):
             data = request.get_json()
             message = data.get('message')
             try:
+                # Build message history for the model
+                messages = [
+                    {'role': 'system', 'content': 'You are an AI Assistant named HomeLM. You respond to any and all requests.'}
+                ]
+                # Add previous messages in the thread to maintain context
+                for chat in chats:
+                    if chat['user_message']:  # Ensure user_message exists
+                        messages.append({'role': 'user', 'content': chat['user_message']})
+                    if chat['llm_response']:  # Ensure llm_response exists
+                        messages.append({'role': 'assistant', 'content': chat['llm_response']})
+                # Add the current user message
+                messages.append({'role': 'user', 'content': message})
+
+                # Call the model with the full conversation history
                 response = ollama.chat(
                     model='gemma3:1b',
-                    messages=[
-                        {'role': 'system', 'content': 'You are an AI Assistant named HomeLM. You respond to any and all requests.'},
-                        {'role': 'user', 'content': message}
-                    ]
+                    messages=messages
                 )['message']['content']
+                
+                # Save the new message and response to the database
                 c.execute('''
                     INSERT INTO chats (user_id, thread_name, user_message, llm_response)
                     VALUES (?, ?, ?, ?)
@@ -233,13 +246,26 @@ def chat(thread_name):
             # Existing POST handling for non-AJAX
             message = request.form['message']
             try:
+                # Build message history for the model
+                messages = [
+                    {'role': 'system', 'content': 'You are an AI Assistant named HomeLM. You respond to any and all requests.'}
+                ]
+                # Add previous messages in the thread to maintain context
+                for chat in chats:
+                    if chat['user_message']:
+                        messages.append({'role': 'user', 'content': chat['user_message']})
+                    if chat['llm_response']:
+                        messages.append({'role': 'assistant', 'content': chat['llm_response']})
+                # Add the current user message
+                messages.append({'role': 'user', 'content': message})
+
+                # Call the model with the full conversation history
                 response = ollama.chat(
                     model='gemma3:1b',
-                    messages=[
-                        {'role': 'system', 'content': 'You are an AI Assistant named HomeLM. You respond to any and all requests.'},
-                        {'role': 'user', 'content': message}
-                    ]
+                    messages=messages
                 )['message']['content']
+                
+                # Save the new message and response to the database
                 c.execute('''
                     INSERT INTO chats (user_id, thread_name, user_message, llm_response)
                     VALUES (?, ?, ?, ?)
@@ -249,6 +275,9 @@ def chat(thread_name):
                 flash(f"Error with LLM: {str(e)}")
             conn.close()
             return redirect(url_for('chat', thread_name=thread_name))
+
+    conn.close()
+    return render_template('chat.html', chats=chats, thread_name=thread_name, threads=threads)
 
     conn.close()
     return render_template('chat.html', chats=chats, thread_name=thread_name, threads=threads)
